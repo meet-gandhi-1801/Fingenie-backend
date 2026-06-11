@@ -1,16 +1,25 @@
-const Transaction = require('../models/Transaction');
-
 // @route  POST /api/transactions
 // @access Private
+const Transaction = require('../models/Transaction');
+const { categorizeTransaction } = require('../services/categorizationService');
+
+// @route  POST /api/transactions
 const addTransaction = async (req, res) => {
   try {
-    const { amount, type, category, merchant, description, date } = req.body;
+    const { amount, type, merchant, description, date, category } = req.body;
+
+    // Auto categorize if category not provided
+    let finalCategory = category;
+    if (!category || category === 'Other') {
+      const result = categorizeTransaction(merchant, description);
+      finalCategory = result.category;
+    }
 
     const transaction = await Transaction.create({
       user: req.user._id,
       amount,
       type,
-      category,
+      category: finalCategory,
       merchant,
       description,
       date
@@ -22,6 +31,10 @@ const addTransaction = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// keep all other functions exactly the same
+// getTransactions, getTransactionById, updateTransaction, deleteTransaction
+// just add this at the top and update addTransaction
 
 // @route  GET /api/transactions
 // @access Private
