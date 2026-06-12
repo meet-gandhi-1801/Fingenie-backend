@@ -14,7 +14,7 @@ const UserSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true
+    // Not required — Google users have no password
   },
   monthlyIncome: {
     type: Number,
@@ -23,6 +23,24 @@ const UserSchema = new mongoose.Schema({
   currency: {
     type: String,
     default: 'INR'
+  },
+  // NEW FIELDS
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  authProvider: {
+    type: String,
+    enum: ['local', 'google'],
+    default: 'local'
+  },
+  googleId: {
+    type: String,
+    default: null
+  },
+  avatar: {
+    type: String,
+    default: null
   }
 }, { timestamps: true });
 

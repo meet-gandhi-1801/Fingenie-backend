@@ -24,14 +24,19 @@ const buildFinancialContext = async (userId) => {
     let currentExpenses = 0;
     const categoryTotals = {};
 
-    currentMonthTx.forEach(t => {
-      if (t.type === 'credit') {
-        currentIncome += t.amount;
-      } else {
-        currentExpenses += t.amount;
-        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
-      }
-    });
+// NEW
+let currentInvestments = 0;
+
+currentMonthTx.forEach(t => {
+  if (t.type === 'credit') {
+    currentIncome += t.amount;
+  } else if (t.category === 'Investment') {
+    currentInvestments += t.amount; // separate bucket
+  } else {
+    currentExpenses += t.amount;
+    currentCategories[t.category] = (currentCategories[t.category] || 0) + t.amount;
+  }
+});
 
     // Calculate last month summary
     let lastIncome = 0;
@@ -54,13 +59,16 @@ const buildFinancialContext = async (userId) => {
       .join('\n');
 
     // Build context string
-    const context = `
+ const context = `
 === CURRENT MONTH (${now.toLocaleString('default', { month: 'long', year: 'numeric' })}) ===
-Total Income:    ₹${currentIncome}
-Total Expenses:  ₹${currentExpenses}
-Net Savings:     ₹${currentIncome - currentExpenses}
-Savings Rate:    ${currentIncome > 0 ? ((currentIncome - currentExpenses) / currentIncome * 100).toFixed(1) : 0}%
-Transactions:    ${currentMonthTx.length}
+Total Income:      ₹${currentIncome}
+Total Expenses:    ₹${currentExpenses}
+Total Investments: ₹${currentInvestments}
+Cash Savings:      ₹${currentIncome - currentExpenses - currentInvestments}
+Total Wealth Built:₹${currentIncome - currentExpenses}
+Savings Rate:      ${currentIncome > 0 ? ((currentIncome - currentExpenses) / currentIncome * 100).toFixed(1) : 0}%
+Transactions:      ${currentMonthTx.length}
+...
 
 === SPENDING BY CATEGORY ===
 ${categoryBreakdown || '  No expenses recorded yet'}

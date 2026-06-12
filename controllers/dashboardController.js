@@ -4,40 +4,48 @@ const Transaction = require('../models/Transaction');
 // @desc   Get this month's income, expenses, savings
 const getMonthlySummary = async (req, res) => {
   try {
-    // Get start and end of current month
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    // Fetch all transactions for this month
     const transactions = await Transaction.find({
       user: req.user._id,
       date: { $gte: startOfMonth, $lte: endOfMonth }
     });
 
-    // Calculate totals
     let totalIncome = 0;
     let totalExpenses = 0;
+    let totalInvestments = 0;
 
     transactions.forEach(t => {
       if (t.type === 'credit') {
         totalIncome += t.amount;
+      } else if (t.category === 'Investment') {
+        totalInvestments += t.amount;
       } else {
         totalExpenses += t.amount;
       }
     });
 
-    const savings = totalIncome - totalExpenses;
+    const cashSavings = totalIncome - totalExpenses - totalInvestments;
+    const totalWealthBuilt = totalIncome - totalExpenses;
     const savingsRate = totalIncome > 0
-      ? ((savings / totalIncome) * 100).toFixed(1)
-      : 0;
+  ? ((cashSavings) / totalIncome * 100).toFixed(1)
+  : 0;
+
+const trueSavingsRate = totalIncome > 0
+  ? (totalWealthBuilt / totalIncome * 100).toFixed(1)
+  : 0;
 
     res.json({
       month: now.toLocaleString('default', { month: 'long', year: 'numeric' }),
       totalIncome,
       totalExpenses,
-      savings,
-      savingsRate: `${savingsRate}%`,
+      totalInvestments,
+      cashSavings,
+      totalWealthBuilt,
+      cashSavingsRate: `${savingsRate}%`,
+      trueSavingsRate: `${trueSavingsRate}%`,
       transactionCount: transactions.length
     });
 
