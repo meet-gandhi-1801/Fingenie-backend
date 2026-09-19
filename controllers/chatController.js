@@ -1,51 +1,48 @@
 const { getFinancialAdvice } = require('../services/aiService');
 const { buildFinancialContext } = require('../services/contextBuilder');
+const ChatMessage = require('../models/ChatMessage');
 
-// Store chat history per user (in memory for MVP)
-const chatHistories = {};
-
-// @route  POST /api/chat
+// @route POST /api/chat
 const chat = async (req, res) => {
   try {
     const { message } = req.body;
-    const userId = req.user._id.toString();
+    const userId = req.user._id;
 
     if (!message) {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    // Build real financial context for this user
     const financialContext = await buildFinancialContext(userId);
 
-    // Initialize chat history for user if not exists
-    if (!chatHistories[userId]) {
-      chatHistories[userId] = [];
-    }
-
-    // Add user message to history
-    chatHistories[userId].push({
+    // Save user message
+    await ChatMessage.create({
+      user: userId,
       role: 'user',
-      message,
-      timestamp: new Date()
+      message
     });
 
-    // Get AI response
     const response = await getFinancialAdvice(message, financialContext);
 
     if (!response.success) {
       return res.status(500).json({ message: response.message });
     }
 
-    // Add AI response to history
-    chatHistories[userId].push({
+    // Save AI response
+    await ChatMessage.create({
+      user: userId,
       role: 'assistant',
-      message: response.message,
-      timestamp: new Date()
+      message: response.message
     });
 
-    // Keep only last 20 messages per user
-    if (chatHistories[userId].length > 20) {
-      chatHistories[userId] = chatHistories[userId].slice(-20);
+    // Trim to last 20 messages
+    const messageCount = await ChatMessage.countDocuments({ user: userId });
+    if (messageCount > 20) {
+      const oldest = await ChatMessage.find({ user: userId })
+        .sort({ createdAt: 1 })
+        .limit(messageCount - 20);
+      await ChatMessage.deleteMany({
+        _id: { $in: oldest.map(m => m._id) }
+      });
     }
 
     res.json({
@@ -60,17 +57,32 @@ const chat = async (req, res) => {
   }
 };
 
-// @route  GET /api/chat/history
+// @route GET /api/chat/history
 const getChatHistory = async (req, res) => {
-  const userId = req.user._id.toString();
-  res.json(chatHistories[userId] || []);
+  try {
+    const messages = await ChatMessage.find({ user: req.user._id })
+      .sort({ createdAt: 1 })
+      .limit(20);
+
+    res.json(messages.map(m => ({
+      role: m.role,
+      message: m.message,
+      timestamp: m.createdAt
+    })));
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-// @route  DELETE /api/chat/history
+// @route DELETE /api/chat/history
 const clearChatHistory = async (req, res) => {
-  const userId = req.user._id.toString();
-  chatHistories[userId] = [];
-  res.json({ message: 'Chat history cleared' });
+  try {
+    await ChatMessage.deleteMany({ user: req.user._id });
+    res.json({ message: 'Chat history cleared' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = { chat, getChatHistory, clearChatHistory };

@@ -4,6 +4,7 @@ const session = require('express-session');
 require('dotenv').config();
 const connectDB = require('./config/db');
 const passport = require('./config/passport');
+const { startInsightWorker } = require('./jobs/insightWorker');
 
 const authRoutes = require('./routes/authRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
@@ -12,6 +13,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const insightRoutes = require('./routes/insightRoutes');
 const goalRoutes = require('./routes/goalRoutes');
+const statementRoutes = require('./routes/statementRoutes');
 
 const app = express();
 
@@ -23,7 +25,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Session for passport
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -41,6 +42,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/insights', insightRoutes);
 app.use('/api/goals', goalRoutes);
+app.use('/api/statements', statementRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'FinGenie API is running' });
@@ -49,4 +51,6 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // Start background worker
+  startInsightWorker();
 });

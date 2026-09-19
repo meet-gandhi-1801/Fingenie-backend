@@ -23,6 +23,7 @@ const buildFinancialContext = async (userId) => {
     let currentIncome = 0;
     let currentExpenses = 0;
     const categoryTotals = {};
+    const currentCategories = {};
 
 // NEW
 let currentInvestments = 0;
@@ -41,13 +42,17 @@ currentMonthTx.forEach(t => {
     // Calculate last month summary
     let lastIncome = 0;
     let lastExpenses = 0;
+    const lastCategories = {};
     lastMonthTx.forEach(t => {
       if (t.type === 'credit') lastIncome += t.amount;
-      else lastExpenses += t.amount;
+      else {
+        lastExpenses += t.amount;
+        lastCategories[t.category] = (lastCategories[t.category] || 0) + t.amount;
+      }
     });
 
     // Format category breakdown
-    const categoryBreakdown = Object.entries(categoryTotals)
+    const categoryBreakdown = Object.entries(currentCategories)
       .sort((a, b) => b[1] - a[1])
       .map(([cat, amount]) => `  - ${cat}: ₹${amount}`)
       .join('\n');
@@ -84,7 +89,8 @@ ${recentList || '  No transactions recorded yet'}
 
     return context;
 
-  } catch (error) {
+  }  catch (error) {
+    console.error('FULL CONTEXT BUILDER ERROR:', error);
     return `Error building context: ${error.message}`;
   }
 };

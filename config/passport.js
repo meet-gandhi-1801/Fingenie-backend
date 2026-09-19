@@ -1,11 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
-};
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -36,26 +31,34 @@ async (accessToken, refreshToken, profile, done) => {
     }
 
     // Create brand new Google user
-    user = await User.create({
-      name: profile.displayName,
-      email: profile.emails[0].value,
-      googleId: profile.id,
-      authProvider: 'google',
-      isEmailVerified: true, // Google already verified the email
-      avatar: profile.photos[0]?.value || null
-    });
-
-    return done(null, user);
+   // Case 3: Brand new user via Google
+user = await User.create({
+  name: profile.displayName,
+  email: profile.emails[0].value,
+  googleId: profile.id,
+  authProvider: 'google',
+  isEmailVerified: true,
+  avatar: profile.photos[0]?.value || null
+});
+user.isNewUser = true;
+// Pass isNewUser flag
+return done(null, user);
 
   } catch (error) {
     return done(error, null);
   }
 }));
 
-passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
-  const user = await User.findById(id);
-  done(null, user);
+passport.serializeUser((user, done) => {
+  done(null, user._id || user.id);
 });
 
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
 module.exports = passport;
