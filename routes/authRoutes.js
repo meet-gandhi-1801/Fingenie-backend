@@ -56,11 +56,11 @@ router.get('/google/callback',
       const isNewUser = req.user.isNewUser || false;
 
       res.redirect(
-        `${process.env.CLIENT_URL}/auth/success?accessToken=${accessToken}&refreshToken=${newRefreshToken}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&isNewUser=${isNewUser}`
+        `${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}&refreshToken=${newRefreshToken}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&isNewUser=${isNewUser}`
       );
     } catch (error) {
       console.error('Google callback error:', error);
-      res.redirect(`${process.env.CLIENT_URL}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
+      res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
     }
   }
 );

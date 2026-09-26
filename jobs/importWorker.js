@@ -8,7 +8,9 @@ const { normalizeTransactionsWithLLM } = require('../services/document-import/ll
 const { validateTransactionsBatch } = require('../services/document-import/validationLayer');
 const { filterDuplicates } = require('../services/document-import/duplicateDetection');
 
-const connection = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+const connection = new Redis(process.env.REDIS_URL, {
+    maxRetriesPerRequest: null
+});
 
 const workerProcess = async (job) => {
     const { jobId, fileData, mimeType, userId, originalname } = job.data;
