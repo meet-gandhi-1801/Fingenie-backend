@@ -47,8 +47,13 @@ const TransactionSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    enum: ['manual', 'sms', 'email'],
+    enum: ['manual', 'sms', 'email', 'statement', 'bank_statement'],
     default: 'manual'
+  },
+  fingerprint: {
+    type: String,
+    unique: true,
+    sparse: true
   }
 }, { timestamps: true });
 
