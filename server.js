@@ -21,9 +21,13 @@ const app = express();
 connectDB();
 
 const allowedOrigins = [
-  (process.env.FRONTEND_URL || process.env.CLIENT_URL)?.replace(/\/$/, ''), // strip trailing slash just in case
+  (process.env.FRONTEND_URL || process.env.CLIENT_URL),
   'http://localhost:5173'
-].filter(Boolean);
+].filter(Boolean).map(url => {
+  let cleanUrl = url.replace(/\/$/, '');
+  if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
+  return cleanUrl;
+});
 
 app.use(cors({
   origin: function (origin, callback) {

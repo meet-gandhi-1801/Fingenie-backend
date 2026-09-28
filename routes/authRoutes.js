@@ -38,11 +38,22 @@ router.get('/google',
   })
 );
 
-const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
-
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=google_auth_failed` }),
+  (req, res, next) => {
+    let frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+    // Ensure it has a protocol to prevent relative redirects that cause 404
+    if (!frontendUrl.startsWith('http')) {
+      frontendUrl = 'https://' + frontendUrl;
+    }
+    // dynamically pass the failure redirect
+    passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=google_auth_failed` })(req, res, next);
+  },
   async (req, res) => {
+    let frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173';
+    if (!frontendUrl.startsWith('http')) {
+      frontendUrl = 'https://' + frontendUrl;
+    }
+
     try {
       // Generate access and refresh tokens
       const { accessToken, refreshToken: newRefreshToken, sessionId } = generateTokens(req.user._id.toString());
