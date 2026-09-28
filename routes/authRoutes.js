@@ -38,8 +38,10 @@ router.get('/google',
   })
 );
 
+const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+
 router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', { failureRedirect: `${frontendUrl}/login?error=google_auth_failed` }),
   async (req, res) => {
     try {
       // Generate access and refresh tokens
@@ -56,11 +58,11 @@ router.get('/google/callback',
       const isNewUser = req.user.isNewUser || false;
 
       res.redirect(
-        `${process.env.FRONTEND_URL}/auth/success?accessToken=${accessToken}&refreshToken=${newRefreshToken}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&isNewUser=${isNewUser}`
+        `${frontendUrl}/auth/success?accessToken=${accessToken}&refreshToken=${newRefreshToken}&name=${encodeURIComponent(req.user.name)}&email=${encodeURIComponent(req.user.email)}&isNewUser=${isNewUser}`
       );
     } catch (error) {
       console.error('Google callback error:', error);
-      res.redirect(`${process.env.FRONTEND_URL}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
+      res.redirect(`${frontendUrl}/auth/error?message=${encodeURIComponent('Authentication failed')}`);
     }
   }
 );

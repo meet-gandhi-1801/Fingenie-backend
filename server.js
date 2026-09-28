@@ -21,7 +21,7 @@ const app = express();
 connectDB();
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL?.replace(/\/$/, ''), // strip trailing slash just in case
+  (process.env.FRONTEND_URL || process.env.CLIENT_URL)?.replace(/\/$/, ''), // strip trailing slash just in case
   'http://localhost:5173'
 ].filter(Boolean);
 
